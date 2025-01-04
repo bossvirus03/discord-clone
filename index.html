@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat App</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h1>Simple Chat</h1>
+    <input id="username" placeholder="Enter your username" />
+    <button onclick="setUsername()">Set Username</button>
+    <div id="chat"></div>
+    <input id="message" placeholder="Enter message" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+      const socket = io('http://localhost:3000');
+
+      socket.on('message', (data) => {
+        const chat = document.getElementById('chat');
+        chat.innerHTML += `<p><strong>${data.username}:</strong> ${data.message} <em>(${new Date(data.timestamp).toLocaleTimeString()})</em></p>`;
+      });
+
+      socket.on('users', (users) => {
+        console.log('Online users:', users);
+      });
+
+      function setUsername() {
+        const username = document.getElementById('username').value;
+        socket.emit('setUsername', username);
+      }
+
+      function sendMessage() {
+        const message = document.getElementById('message').value;
+        const username = document.getElementById('username').value;
+        socket.emit('message', { message, username });
+        document.getElementById('message').value = '';
+      }
+    </script>
+  </body>
+</html>
