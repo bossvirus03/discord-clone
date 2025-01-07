@@ -1,6 +1,6 @@
 generator client {
     provider        = "prisma-client-js"
-    output          = "./../../../../../../node_modules/@discord-clone/DiscordClone"
+    output          = "./../../../../node_modules/@discord-clone/DiscordClone"
     previewFeatures = ["prismaSchemaFolder"]
 }
 
@@ -20,19 +20,42 @@ model Identity {
 }
 
 model User {
-    id              String         @id @default(auto()) @map("_id") @db.ObjectId
-    identity        Identity?      @relation
-    avatarUrl       String?
-    badges          String[]
-    name            String
-    status          UserStatus     @default(OFFLINE)
-    createdAt       DateTime       @default(now())
-    updatedAt       DateTime       @updatedAt
-    messages        Message[]
-    serversOwned    Server[]       @relation(name: "ServerOwner")
-    serversMemberOf ServerMember[]
+    id        String     @id @default(auto()) @map("_id") @db.ObjectId
+    identity  Identity?  @relation
+    avatarUrl String?
+    badges    String[]
+    name      String
+    status    UserStatus @default(OFFLINE)
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+    role      UserRole   @default(USER)
+
+    serversOwned     Server[]        @relation(name: "ServerOwner")
+    serversMemberOf  ServerMember[]
+    friends          Friend[]        @relation("UserFriends")
+    friendOf         Friend[]        @relation("UserFriendsReverse")
+    sentMessages     DirectMessage[] @relation("SenderRelation")
+    receivedMessages DirectMessage[] @relation("ReceiverRelation")
+
+    ServerMessage ServerMessage[]
+    DirectMessage DirectMessage[]
 
     @@map("user")
+}
+
+model Friend {
+    id        String       @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String       @db.ObjectId
+    friendId  String       @db.ObjectId
+    status    FriendStatus @default(PENDING)
+    user      User         @relation("UserFriends", fields: [userId], references: [id])
+    friend    User         @relation("UserFriendsReverse", fields: [friendId], references: [id])
+    createdAt DateTime     @default(now())
+
+    @@unique([userId, friendId])
+    @@index([userId])
+    @@index([friendId])
+    @@map("friend")
 }
 
 model ServerMember {
@@ -43,35 +66,63 @@ model ServerMember {
     server   Server @relation(fields: [serverId], references: [id])
 
     @@unique([userId, serverId])
+    @@index([userId])
+    @@index([serverId])
     @@map("server_member")
 }
 
 model Server {
-    id         String         @id @default(auto()) @map("_id") @db.ObjectId
+    id         String          @id @default(auto()) @map("_id") @db.ObjectId
     name       String
     iconUrl    String?
     badges     String[]
     serverType ServerType
-    ownerId    String         @db.ObjectId
-    owner      User           @relation(fields: [ownerId], references: [id], name: "ServerOwner")
+    ownerId    String          @db.ObjectId
+    owner      User            @relation(fields: [ownerId], references: [id], name: "ServerOwner")
     members    ServerMember[]
-    createdAt  DateTime       @default(now())
-    updatedAt  DateTime       @updatedAt
-    messages   Message[]
+    messages   ServerMessage[]
+    createdAt  DateTime        @default(now())
+    updatedAt  DateTime        @updatedAt
 
     @@map("server")
 }
 
-model Message {
-    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+model ServerMessage {
+    id        String    @id @default(auto()) @map("_id") @db.ObjectId
     content   String
-    authorId  String   @db.ObjectId
-    author    User     @relation(fields: [authorId], references: [id])
-    createdAt DateTime @default(now())
-    Server    Server?  @relation(fields: [serverId], references: [id])
-    serverId  String?  @db.ObjectId
+    authorId  String    @db.ObjectId
+    author    User      @relation(fields: [authorId], references: [id])
+    serverId  String?   @db.ObjectId
+    server    Server?   @relation(fields: [serverId], references: [id])
+    createdAt DateTime  @default(now())
+    editedAt  DateTime?
 
-    @@map("message")
+    @@index([serverId])
+    @@map("server_message")
+}
+
+model DirectMessage {
+    id         String    @id @default(auto()) @map("_id") @db.ObjectId
+    content    String
+    senderId   String    @db.ObjectId
+    receiverId String    @db.ObjectId
+    sender     User      @relation("SenderRelation", fields: [senderId], references: [id])
+    receiver   User      @relation("ReceiverRelation", fields: [receiverId], references: [id])
+    createdAt  DateTime  @default(now())
+    editedAt   DateTime?
+    readAt     DateTime?
+    User       User?     @relation(fields: [userId], references: [id])
+    userId     String?   @db.ObjectId
+
+    @@unique([senderId, receiverId, createdAt])
+    @@index([senderId])
+    @@index([receiverId])
+    @@map("direct_message")
+}
+
+enum UserRole {
+    USER
+    ADMIN
 }
 
 enum ServerType {
@@ -85,4 +136,10 @@ enum UserStatus {
     OFFLINE
     DO_NOT_DISTURB
     IDLE
+}
+
+enum FriendStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
 }

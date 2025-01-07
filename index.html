@@ -1,42 +1,163 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat App</title>
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-  </head>
-  <body>
-    <h1>Simple Chat</h1>
-    <input id="username" placeholder="Enter your username" />
-    <button onclick="setUsername()">Set Username</button>
-    <div id="chat"></div>
-    <input id="message" placeholder="Enter message" />
-    <button onclick="sendMessage()">Send</button>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập và kết bạn</title>
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .login-container {
+      max-width: 300px;
+      margin: 50px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .login-container button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .login-container button:hover {
+      background-color: #45a049;
+    }
+    .notification {
+      margin: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .action-buttons {
+      margin-top: 10px;
+    }
+    .action-buttons button {
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Đăng nhập</h2>
+    <input type="text" id="username" placeholder="Tên đăng nhập" />
+    <input type="password" id="password" placeholder="Mật khẩu" />
+    <button onclick="login()">Đăng nhập</button>
+  </div>
 
-    <script>
-      const socket = io('http://localhost:3000');
+  <div id="notification" class="notification"></div>
+  <div id="notification2" class="notification" style="display: none;"></div>
 
-      socket.on('message', (data) => {
-        const chat = document.getElementById('chat');
-        chat.innerHTML += `<p><strong>${data.username}:</strong> ${data.message} <em>(${new Date(data.timestamp).toLocaleTimeString()})</em></p>`;
-      });
+  <div id="friendRequestSection" class="notification" style="display: none;">
+    <h3>Yêu cầu kết bạn</h3>
+    <p>Gửi yêu cầu kết bạn đến user khác:</p>
+    <input type="text" id="friendId" placeholder="ID bạn bè" />
+    <button onclick="sendFriendRequest()">Gửi yêu cầu</button>
+  </div>
 
-      socket.on('users', (users) => {
-        console.log('Online users:', users);
-      });
+  <script>
+    const socket = io("http://localhost:3000"); // Đảm bảo rằng địa chỉ đúng với máy chủ của bạn
+    let userId = null;
 
-      function setUsername() {
-        const username = document.getElementById('username').value;
-        socket.emit('setUsername', username);
+    // Đăng nhập và lấy userId
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        alert("Vui lòng nhập tên đăng nhập và mật khẩu.");
+        return;
       }
 
-      function sendMessage() {
-        const message = document.getElementById('message').value;
-        const username = document.getElementById('username').value;
-        socket.emit('message', { message, username });
-        document.getElementById('message').value = '';
+      try {
+        // Gọi API đăng nhập (giả sử nó trả về userId)
+        const response = await fetch("http://localhost:3000/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+        if (data.userId) {
+          // Lưu userId vào localStorage
+          localStorage.setItem("userId", data.userId);
+          userId = data.userId;
+
+          // Thông báo đăng nhập thành công
+          alert("Đăng nhập thành công!");
+
+          // Kết nối socket cho userId
+          socket.emit("setUserId", { userId });
+
+          // Hiển thị phần yêu cầu kết bạn
+          document.getElementById("friendRequestSection").style.display = "block";
+
+          // Nhận yêu cầu kết bạn
+          socket.on("friend_request", (data) => {
+            // Hiển thị thông báo có yêu cầu kết bạn
+            document.getElementById("notification2").innerHTML = `
+              <p>Đã có yêu cầu kết bạn từ người dùng có ID: ${data.userId}</p>
+              <div class="action-buttons">
+                <button onclick="acceptFriendRequest('${data.userId}')">Chấp nhận</button>
+                <button onclick="rejectFriendRequest('${data.userId}')">Từ chối</button>
+              </div>
+            `;
+            document.getElementById("notification2").style.display = "block"; // Hiển thị thông báo
+          });
+        } else {
+          alert("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+        }
+      } catch (error) {
+        console.error("Đăng nhập thất bại:", error);
+        alert("Đăng nhập thất bại.");
       }
-    </script>
-  </body>
+    }
+
+    // Gửi yêu cầu kết bạn
+    function sendFriendRequest() {
+      const friendId = document.getElementById("friendId").value;
+
+      if (!friendId) {
+        alert("Vui lòng nhập ID bạn bè.");
+        return;
+      }
+
+      // Gửi sự kiện qua socket
+      socket.emit("sendFriendRequest", { userId, friendId });
+      alert("Yêu cầu kết bạn đã được gửi!");
+    }
+
+    // Chấp nhận yêu cầu kết bạn
+    function acceptFriendRequest(friendId) {
+      // Gửi sự kiện chấp nhận yêu cầu kết bạn qua socket
+      socket.emit("acceptFriendRequest", { userId, friendId });
+      alert("Yêu cầu kết bạn đã được chấp nhận!");
+      document.getElementById("notification2").style.display = "none"; // Ẩn thông báo
+    }
+
+    // Từ chối yêu cầu kết bạn
+    function rejectFriendRequest(friendId) {
+      // Gửi sự kiện từ chối yêu cầu kết bạn qua socket
+      socket.emit("rejectFriendRequest", { userId, friendId });
+      alert("Yêu cầu kết bạn đã bị từ chối!");
+      document.getElementById("notification2").style.display = "none"; // Ẩn thông báo
+    }
+  </script>
+</body>
 </html>

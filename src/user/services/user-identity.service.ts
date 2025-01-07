@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserIdentityDto } from '../dto/create-user-identity.dto';
-import { UpdateUserIdentityDto } from '../dto/update-user-identity.dto';
+import { CreateUserIdentityDto } from '../../../lib/shared/dto/user/create-user-identity.dto';
+import { UpdateUserIdentityDto } from '../../../lib/shared/dto/user/update-user-identity.dto';
 import { PrismaService } from 'lib/data-access/prisma/prisma.service';
 
 @Injectable()
 export class IdentityService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prisma: PrismaService) {}
 
   async exists(usernameOrEmail: string) {
-    return await this.prismaService.identity.findFirst({
+    return await this.prisma.identity.findFirst({
       where: {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
       },
     });
   }
   create(createIdentityDto: CreateUserIdentityDto) {
-    return this.prismaService.identity.create({ data: createIdentityDto });
+    return this.prisma.identity.create({ data: createIdentityDto });
   }
 
   findAll() {
@@ -23,7 +23,7 @@ export class IdentityService {
   }
 
   async findByUsernameOrEmail(usernameOrEmail: string) {
-    return await this.prismaService.identity.findFirst({
+    return await this.prisma.identity.findFirst({
       where: {
         OR: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
       },
