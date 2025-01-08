@@ -1,15 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ServerService } from './server.service';
-import { CreateServerDto } from './dto/create-server.dto';
-import { UpdateServerDto } from './dto/update-server.dto';
+import { CreateServerDto } from 'lib/shared/dto/server/create-server.dto';
+import { UpdateServerDto } from 'lib/shared/dto/server/update-server.dto';
+import { User } from 'lib/shared/decorators/customize.decorator';
+import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
 
 @Controller('server')
 export class ServerController {
   constructor(private readonly serverService: ServerService) {}
 
   @Post()
-  create(@Body() createServerDto: CreateServerDto) {
-    return this.serverService.create(createServerDto);
+  create(@Body() createServerDto: CreateServerDto, @User() user: JwtPayload) {
+    const { userId: ownerId } = user;
+    return this.serverService.create(createServerDto, ownerId);
   }
 
   @Get()

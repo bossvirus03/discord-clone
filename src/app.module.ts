@@ -5,10 +5,11 @@ import { SocketModule } from './socket/socket.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { ServerModule } from './server/server.module';
-import { MessageModule } from './message/message.module';
 import { ChatModule } from './chat/chat.module';
 import { PresenceModule } from './presence/presence.module';
 import { UserModule } from './user/user.module';
+import { ChannelModule } from './channel/channel.module';
+import { RelasonshipModule } from './relasonship/relasonship.module';
 
 @Module({
   imports: [
@@ -18,10 +19,11 @@ import { UserModule } from './user/user.module';
     UserModule,
     AuthModule,
     ServerModule,
-    MessageModule,
     SocketModule,
     ChatModule,
     PresenceModule,
+    ChannelModule,
+    RelasonshipModule,
   ],
   controllers: [AppController],
   providers: [AppService],

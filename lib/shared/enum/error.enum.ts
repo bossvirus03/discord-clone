@@ -1,0 +1,4 @@
+export enum ErrorMessage {
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  CANOT_CONNECT_TO_SOCKET = 'CANOT_CONNECT_TO_SOCKET',
+}

@@ -4,10 +4,9 @@ import { UserService } from './services/user.service';
 import { IdentityService } from './services/user-identity.service';
 import { PrismaModule } from 'lib/data-access/prisma/prisma.module';
 import { PrismaService } from 'lib/data-access/prisma/prisma.service';
-import { SocketModule } from 'src/socket/socket.module';
 
 @Module({
-  imports: [PrismaModule, forwardRef(() => SocketModule)],
+  imports: [PrismaModule],
   controllers: [UserController],
   providers: [UserService, IdentityService, PrismaService],
   exports: [UserService, IdentityService],

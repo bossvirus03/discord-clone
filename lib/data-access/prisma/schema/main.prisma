@@ -30,32 +30,46 @@ model User {
     updatedAt DateTime   @updatedAt
     role      UserRole   @default(USER)
 
-    serversOwned     Server[]        @relation(name: "ServerOwner")
-    serversMemberOf  ServerMember[]
-    friends          Friend[]        @relation("UserFriends")
-    friendOf         Friend[]        @relation("UserFriendsReverse")
-    sentMessages     DirectMessage[] @relation("SenderRelation")
-    receivedMessages DirectMessage[] @relation("ReceiverRelation")
+    serversOwned      Server[]       @relation(name: "ServerOwner")
+    serversMemberOf   ServerMember[]
+    friends           Relationship[] @relation("UserRelationships")
+    friendOf          Relationship[] @relation("UserRelationshipsReverse")
+    personalChannelId String?        @db.ObjectId
+    personalChannel   Channel?       @relation
 
-    ServerMessage ServerMessage[]
-    DirectMessage DirectMessage[]
+    messages Message[] @relation("UserMessages")
 
     @@map("user")
 }
 
-model Friend {
+model Channel {
+    id        String      @id @default(auto()) @map("_id") @db.ObjectId
+    name      String
+    type      ChannelType
+    serverId  String?     @db.ObjectId
+    server    Server?     @relation(fields: [serverId], references: [id])
+    ownerId   String?     @unique @db.ObjectId
+    owner     User?       @relation(fields: [ownerId], references: [id]) // Sử dụng ownerId thay vì trực tiếp liên kết qua personalChannelId
+    messages  Message[]   @relation("ChannelMessages")
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+
+    @@map("channel")
+}
+
+model Relationship {
     id        String       @id @default(auto()) @map("_id") @db.ObjectId
     userId    String       @db.ObjectId
     friendId  String       @db.ObjectId
     status    FriendStatus @default(PENDING)
-    user      User         @relation("UserFriends", fields: [userId], references: [id])
-    friend    User         @relation("UserFriendsReverse", fields: [friendId], references: [id])
+    user      User         @relation("UserRelationships", fields: [userId], references: [id])
+    friend    User         @relation("UserRelationshipsReverse", fields: [friendId], references: [id])
     createdAt DateTime     @default(now())
 
     @@unique([userId, friendId])
     @@index([userId])
     @@index([friendId])
-    @@map("friend")
+    @@map("relationships")
 }
 
 model ServerMember {
@@ -72,63 +86,39 @@ model ServerMember {
 }
 
 model Server {
-    id         String          @id @default(auto()) @map("_id") @db.ObjectId
-    name       String
-    iconUrl    String?
-    badges     String[]
-    serverType ServerType
-    ownerId    String          @db.ObjectId
-    owner      User            @relation(fields: [ownerId], references: [id], name: "ServerOwner")
-    members    ServerMember[]
-    messages   ServerMessage[]
-    createdAt  DateTime        @default(now())
-    updatedAt  DateTime        @updatedAt
+    id        String         @id @default(auto()) @map("_id") @db.ObjectId
+    name      String
+    iconUrl   String?
+    badges    String[]
+    ownerId   String         @db.ObjectId
+    owner     User           @relation(fields: [ownerId], references: [id], name: "ServerOwner")
+    members   ServerMember[]
+    channels  Channel[]
+    createdAt DateTime       @default(now())
+    updatedAt DateTime       @updatedAt
 
     @@map("server")
 }
 
-model ServerMessage {
+model Message {
     id        String    @id @default(auto()) @map("_id") @db.ObjectId
     content   String
-    authorId  String    @db.ObjectId
-    author    User      @relation(fields: [authorId], references: [id])
-    serverId  String?   @db.ObjectId
-    server    Server?   @relation(fields: [serverId], references: [id])
+    senderId  String    @db.ObjectId
+    sender    User      @relation("UserMessages", fields: [senderId], references: [id])
+    channelId String    @db.ObjectId
+    channel   Channel   @relation("ChannelMessages", fields: [channelId], references: [id])
     createdAt DateTime  @default(now())
     editedAt  DateTime?
+    readAt    DateTime?
 
-    @@index([serverId])
-    @@map("server_message")
-}
-
-model DirectMessage {
-    id         String    @id @default(auto()) @map("_id") @db.ObjectId
-    content    String
-    senderId   String    @db.ObjectId
-    receiverId String    @db.ObjectId
-    sender     User      @relation("SenderRelation", fields: [senderId], references: [id])
-    receiver   User      @relation("ReceiverRelation", fields: [receiverId], references: [id])
-    createdAt  DateTime  @default(now())
-    editedAt   DateTime?
-    readAt     DateTime?
-    User       User?     @relation(fields: [userId], references: [id])
-    userId     String?   @db.ObjectId
-
-    @@unique([senderId, receiverId, createdAt])
     @@index([senderId])
-    @@index([receiverId])
-    @@map("direct_message")
+    @@index([channelId])
+    @@map("message")
 }
 
 enum UserRole {
     USER
     ADMIN
-}
-
-enum ServerType {
-    TEXT
-    VOICE
-    CATEGORY
 }
 
 enum UserStatus {
@@ -142,4 +132,10 @@ enum FriendStatus {
     PENDING
     ACCEPTED
     REJECTED
+}
+
+enum ChannelType {
+    PERSONAL
+    CHAT
+    VOICE
 }

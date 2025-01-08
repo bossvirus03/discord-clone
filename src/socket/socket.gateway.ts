@@ -41,15 +41,6 @@ export class SocketGateway {
     this.socketService.handleDisconnect(socket);
   }
 
-  @SubscribeMessage('setUserId')
-  handleUserId(
-    @MessageBody() data: { userId: string },
-    @ConnectedSocket() socket: Socket,
-  ): void {
-    socket.data.userId = data.userId;
-    console.log(`User connected with ID: ${data.userId}`);
-  }
-
   // @SubscribeMessage('sendFriendRequest')
   // async handleSendFriendRequest(
   //   @MessageBody() data: { userId: string; friendId: string },

@@ -6,16 +6,15 @@ import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { UserService } from 'src/user/services/user.service';
+import { RelasonshipService } from 'src/relasonship/relasonship.service';
 
 @Injectable()
 export class SocketService {
   private server: Server;
   constructor(
-    private readonly prisma: PrismaService,
     private readonly authService: AuthService,
-    @Inject(forwardRef(() => UserService))
-    private userService: UserService,
+    @Inject(forwardRef(() => RelasonshipService))
+    private relasonshipService: RelasonshipService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -39,11 +38,7 @@ export class SocketService {
       this.handleDisconnect(socket);
       return;
     }
-    console.log('user connected', {
-      id: userDecoded.userId,
-      username: userDecoded.username,
-      role: userDecoded.role,
-    });
+
     socket.data.user = userDecoded;
     this.setActiveStatus(socket, true);
   }
@@ -55,11 +50,9 @@ export class SocketService {
 
   async setActiveStatus(socket: Socket, isActive) {
     const user = socket.data?.user;
-
     if (!user) {
       return;
     }
-
     const activeUser: UserPresenceActive = {
       userId: socket.data.user.userId,
       socketId: socket.id,
@@ -68,13 +61,20 @@ export class SocketService {
 
     await this.emitPresenceToFriends(activeUser);
 
-    await this.cacheManager.set(`user ${user.userId}`, activeUser);
+    await this.cacheManager.set(`user_${user.userId}`, activeUser, 0);
+    const u = await this.cacheManager.get(`user_${user.userId}`);
+
+    const _u = u as UserPresenceActive;
+    console.log('user connected', {
+      id: _u.userId,
+      socket: _u.socketId,
+    });
   }
 
   async emitPresenceToFriends(activeUser: UserPresenceActive) {
-    const friends = await this.userService.getFriends(activeUser.userId);
+    const friends = await this.relasonshipService.getFriends(activeUser.userId);
     for (const friend of friends) {
-      const user = await this.cacheManager.get(`user ${friend.id}`);
+      const user = await this.cacheManager.get(`user_${friend.id}`);
       if (!user) {
         return;
       }
@@ -86,55 +86,45 @@ export class SocketService {
     }
   }
 
-  async sendFriendRequest(
-    sendFriendRequestDto: SendFriendRequestDto,
-    userId: string,
-  ) {
-    const { friendId } = sendFriendRequestDto;
+  async sendFriendRequest(friendId: string, userId: string) {
     // Gửi yêu cầu kết bạn đến bạn của người dùng
-    const user = await this.cacheManager.get(`user ${friendId}`);
+    const user = await this.cacheManager.get(`user_${friendId}`);
+    const user1 = await this.cacheManager.get(`user_${userId}`);
+    console.log(user, user1);
     const f = user as UserPresenceActive;
-    this.server.to(f.socketId).emit('friend_request', { userId, friendId });
-  }
-
-  async acceptFriendRequestNotification(userId: string, friendId: string) {
-    // Tìm yêu cầu kết bạn giữa userId và friendId
-    const request = await this.prisma.friend.findFirst({
-      where: {
-        userId: userId,
-        friendId: friendId,
-        status: 'PENDING', // Đảm bảo rằng chỉ có yêu cầu đang chờ được chấp nhận
-      },
-    });
-
-    // Nếu không tìm thấy yêu cầu kết bạn, trả về lỗi hoặc thông báo không hợp lệ
-    if (!request) {
-      throw new Error('Friend request not found or already processed.');
+    try {
+      this.server.to(f.socketId).emit('friend_request', { userId, friendId });
+    } catch (error) {
+      console.error(error);
     }
-
-    // Cập nhật trạng thái yêu cầu kết bạn thành "ACCEPTED"
-    const updatedRequest = await this.prisma.friend.update({
-      where: {
-        id: request.id, // Cập nhật theo ID của yêu cầu kết bạn
-      },
-      data: {
-        status: 'ACCEPTED',
-      },
-    });
-
-    // Gửi thông báo chấp nhận kết bạn tới cả hai người dùng qua socket
-    this.server.to(userId).emit('friend_accepted', { friendId });
-    this.server.to(friendId).emit('friend_accepted', { userId });
-
-    return updatedRequest;
   }
 
-  async rejectFriendRequestNotification(userId: string, friendId: string) {
-    const request = await this.prisma.friend.delete({
-      where: { userId_friendId: { userId, friendId } },
-    });
+  async acceptFriendRequest(userId: string, friendId: string) {
+    try {
+      const userSendRequest = await this.cacheManager.get(`user_${userId}`);
+      const userReceiveRequest = await this.cacheManager.get(
+        `user_${friendId}`,
+      );
+      console.log(userSendRequest, userReceiveRequest);
+      const us = userSendRequest as UserPresenceActive;
+      const ur = userReceiveRequest as UserPresenceActive;
+      // Gửi thông báo chấp nhận kết bạn tới cả hai người dùng qua socket
+      this.server.to(us.socketId).emit('friend_accepted', { friendId });
+      this.server.to(ur.socketId).emit('friend_accepted', { userId });
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
-    this.server.to(friendId).emit('friend_rejected', { userId });
-    return request;
+  async rejectFriendRequest(userId: string, friendId: string) {
+    try {
+      const userReceiveRequest = await this.cacheManager.get(
+        `user_${friendId}`,
+      );
+      const ur = userReceiveRequest as UserPresenceActive;
+      this.server.to(ur.socketId).emit('friend_rejected', { friendId: userId });
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

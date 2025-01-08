@@ -1,11 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { CreateServerDto } from './dto/create-server.dto';
-import { UpdateServerDto } from './dto/update-server.dto';
+import { PrismaService } from 'lib/data-access/prisma/prisma.service';
+import { CreateServerDto } from 'lib/shared/dto/server/create-server.dto';
+import { UpdateServerDto } from 'lib/shared/dto/server/update-server.dto';
+import { ChannelType } from '@discord-clone/DiscordClone';
 
 @Injectable()
 export class ServerService {
-  create(createServerDto: CreateServerDto) {
-    return 'This action adds a new server';
+  constructor(private prisma: PrismaService) {}
+  async create(createServerDto: CreateServerDto, ownerId: string) {
+    return await this.prisma.server.create({
+      data: {
+        ownerId,
+        name: createServerDto.name,
+        channels: {
+          create: [
+            {
+              name: 'general',
+              type: ChannelType.CHAT,
+            },
+            {
+              name: 'general',
+              type: ChannelType.VOICE,
+            },
+          ],
+        },
+      },
+    });
   }
 
   findAll() {

@@ -9,12 +9,11 @@ import { UseGuards } from '@nestjs/common';
 import { WsJwtGuard } from 'src/socket/guards/jwt-ws.guard';
 import { ServerToClientEvents } from 'lib/shared/type/ws-event';
 import { Server, Socket } from 'socket.io';
-import { CreateDirectMessageDto } from 'lib/shared/dto/message/create-message.dto';
 import { SocketAuthMiddleware } from 'lib/shared/middleware/auth-socket.middleware';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
-@WebSocketGateway({ cors: { origin: '*' }, namespace: 'chat' })
+@WebSocketGateway({ cors: { origin: '*' } })
 @UseGuards(WsJwtGuard)
 export class ChatGateway {
   constructor(
@@ -31,10 +30,5 @@ export class ChatGateway {
     client.use(
       SocketAuthMiddleware(this.jwtService, this.configService) as any,
     );
-  }
-
-  @SubscribeMessage('message')
-  handleMessage(client, payload: CreateDirectMessageDto) {
-    return 'hello world!';
   }
 }
