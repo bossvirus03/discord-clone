@@ -16,7 +16,18 @@ model Identity {
     password String
     user     User   @relation(fields: [id], references: [id])
 
+    tokens Token[]
+
     @@map("identity")
+}
+
+model Token {
+    id           String    @id @default(auto()) @map("_id") @db.ObjectId
+    refreshToken String?   @unique
+    identityId   String?   @db.ObjectId
+    Identity     Identity? @relation(fields: [identityId], references: [id])
+
+    @@map("token")
 }
 
 model User {

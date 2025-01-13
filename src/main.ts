@@ -4,11 +4,15 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from 'lib/shared/exception/http-exception.filter';
 import { ResponseInterceptor } from 'lib/shared/intercepter/response.interceptor';
 import { validateEnv } from 'configs/env.configuration';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   validateEnv();
 
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+
   // global filter
   app.useGlobalFilters(new HttpExceptionFilter());
 

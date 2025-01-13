@@ -6,7 +6,10 @@ import { UserService } from 'src/user/services/user.service';
 import { compareSync, genSaltSync, hashSync } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
-import { env } from 'configs/env.configuration';
+import envConfiguration, { env } from 'configs/env.configuration';
+import { Request, Response } from 'express';
+import { PrismaService } from 'lib/data-access/prisma/prisma.service';
+import { createHashPassword } from 'lib/helper';
 
 @Injectable()
 export class AuthService {
@@ -15,8 +18,8 @@ export class AuthService {
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
     private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
+    private prisma: PrismaService,
+  ) { }
 
   async validateUserPassword(
     usernameOrEmail: string,
@@ -28,12 +31,13 @@ export class AuthService {
     return isValid;
   }
 
-  async createHashPassword(password: string): Promise<string> {
-    const saltRounds = env.jwt.SALT_ROUNDS;
-    const salt = genSaltSync(Number(saltRounds));
-    const hash = await hashSync(password, salt);
-    return hash;
+  async verifyToken(token: string, isRefresh: boolean) {
+    const secret = isRefresh ? env.jwt.JWT_REFRESH_TOKEN_SECRET : env.jwt.JWT_ACCESS_TOKEN_SECRET
+    return await this.jwtService.verifyAsync(token, {
+      secret: secret
+    })
   }
+
 
   async validateUser(
     usernameOrEmail: string,
@@ -63,7 +67,7 @@ export class AuthService {
     return this.jwtService.decode(token);
   }
 
-  async login(user: any) {
+  async login(user: JwtPayload, res: Response) {
     const payload: JwtPayload = {
       role: user.role,
       userId: user.userId,
@@ -71,15 +75,52 @@ export class AuthService {
       // email: user.email,
       sub: user.userId,
     };
+
+    const refreshToken = await this.processRefreshToken(payload);
+    res.cookie("refresh_token", refreshToken);
+    await this.prisma.token.create({
+      data: {
+        refreshToken: refreshToken,
+        identityId: user.userId
+      }
+    })
     return {
-      userId: user.id,
-      access_token: this.jwtService.sign(payload, {}),
+      access_token: this.jwtService.sign(payload),
+      refresh_token: refreshToken
     };
   }
 
+  async processRefreshToken(payload: JwtPayload) {
+    return await this.jwtService.signAsync(payload, {
+      secret: env.jwt.JWT_REFRESH_TOKEN_SECRET,
+      expiresIn: env.jwt.JWT_REFRESH_TOKEN_EXPIRE
+    })
+  }
+
   async register(user: RegisterUserDto) {
-    const hashedPassword = await this.createHashPassword(user.password);
+    const hashedPassword = await createHashPassword(user.password);
     user.password = hashedPassword;
     return this.userService.create(user);
+  }
+
+  async logout(req: Request, res: Response) {
+    const token = await this.prisma.token.delete({ where: { refreshToken: req.cookies['refresh_token'] } })
+    res.clearCookie('refresh_token')
+  }
+
+  async refresh(req: Request) {
+    //todo
+    try {
+      const refresh = req.cookies['refresh_token']
+      const payload = await this.verifyToken(refresh, true)
+      return {
+        userId: payload.userId,
+        access_token: this.jwtService.sign(payload),
+        refresh_token: refresh
+      };
+    } catch (error) {
+      // throw 
+    }
+
   }
 }

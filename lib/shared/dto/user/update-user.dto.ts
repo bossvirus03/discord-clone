@@ -1,4 +1,11 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
+import { UserRole } from '@discord-clone/DiscordClone';
+import { IsNotEmpty } from 'class-validator';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {}
+export class UpdateUserDto {
+    avatarUrl: string
+    badges: string[]
+    @IsNotEmpty()
+    name: string
+    @IsNotEmpty()
+    role: UserRole
+}

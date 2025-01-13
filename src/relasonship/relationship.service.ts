@@ -3,12 +3,12 @@ import { PrismaService } from 'lib/data-access/prisma/prisma.service';
 import { SocketService } from 'src/socket/socket.service';
 
 @Injectable()
-export class RelasonshipService {
+export class RelationshipService {
   constructor(
     private prisma: PrismaService,
     @Inject(forwardRef(() => SocketService))
     private socketService: SocketService,
-  ) {}
+  ) { }
   async sendFriendRequest(friendId: string, userId: string) {
     if (!userId || !friendId) {
       throw new Error('User ID and Friend ID must be provided');

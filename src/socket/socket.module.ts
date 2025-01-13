@@ -6,17 +6,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from 'src/user/user.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import { RelasonshipModule } from 'src/relasonship/relasonship.module';
+import { RelationshipModule } from 'src/relasonship/relationship.module';
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule,
     AuthModule,
-    forwardRef(() => RelasonshipModule),
+    forwardRef(() => RelationshipModule),
     CacheModule.register(),
   ],
   providers: [SocketGateway, SocketService],
   exports: [SocketService],
 })
-export class SocketModule {}
+export class SocketModule { }

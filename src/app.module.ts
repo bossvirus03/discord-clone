@@ -9,7 +9,7 @@ import { ChatModule } from './chat/chat.module';
 import { PresenceModule } from './presence/presence.module';
 import { UserModule } from './user/user.module';
 import { ChannelModule } from './channel/channel.module';
-import { RelasonshipModule } from './relasonship/relasonship.module';
+import { RelationshipModule } from './relasonship/relationship.module';
 
 @Module({
   imports: [
@@ -23,9 +23,9 @@ import { RelasonshipModule } from './relasonship/relasonship.module';
     ChatModule,
     PresenceModule,
     ChannelModule,
-    RelasonshipModule,
+    RelationshipModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { RelasonshipService } from './relasonship.service';
+import { RelationshipService } from './relationship.service';
 import { SendFriendRequestDto } from 'lib/shared/dto/friend/friend-request.dto';
 import { User } from 'lib/shared/decorators/customize.decorator';
 import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
 
-@Controller('relasonship')
-export class RelasonshipController {
-  constructor(private readonly relasonshipService: RelasonshipService) {}
+@Controller('relationship')
+export class RelationshipController {
+  constructor(private readonly relasonshipService: RelationshipService) { }
 
   @Post(':friendId/send-friend-request')
   sendFriendRequest(

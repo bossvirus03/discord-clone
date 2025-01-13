@@ -6,17 +6,17 @@ import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { RelasonshipService } from 'src/relasonship/relasonship.service';
+import { RelationshipService } from 'src/relasonship/relationship.service';
 
 @Injectable()
 export class SocketService {
   private server: Server;
   constructor(
     private readonly authService: AuthService,
-    @Inject(forwardRef(() => RelasonshipService))
-    private relasonshipService: RelasonshipService,
+    @Inject(forwardRef(() => RelationshipService))
+    private relasonshipService: RelationshipService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   initializeServer(server: Server) {
     this.server = server;
