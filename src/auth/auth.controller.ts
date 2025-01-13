@@ -5,7 +5,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RegisterUserDto } from '../../lib/shared/dto/auth/register.dto';
 import { Public, User } from 'lib/shared/decorators/customize.decorator';
 import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
-import { AuthSignin } from 'lib/shared/responses/auth/auth-response.type';
+import { AuthSignIn, AuthSignUp } from 'lib/shared/responses/auth/auth-response.type';
 
 @Controller('auth')
 export class AuthController {
@@ -14,13 +14,13 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Public()
   @Post('login')
-  async login(@Req() req: Request, @Res({ passthrough: true }) res): Promise<AuthSignin> {
+  async login(@Req() req: Request, @Res({ passthrough: true }) res): Promise<AuthSignIn> {
     return this.authService.login(req.user as any, res);
   }
 
   @Post('register')
   @Public()
-  async register(@Body() req: RegisterUserDto) {
+  async register(@Body() req: RegisterUserDto): Promise<AuthSignUp> {
     return this.authService.register(req);
   }
 
