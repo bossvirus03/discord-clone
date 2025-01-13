@@ -50,6 +50,8 @@ model User {
 
     messages Message[] @relation("UserMessages")
 
+    permissions ServerPermission[]
+
     @@map("user")
 }
 
@@ -97,16 +99,17 @@ model ServerMember {
 }
 
 model Server {
-    id        String         @id @default(auto()) @map("_id") @db.ObjectId
-    name      String
-    iconUrl   String?
-    badges    String[]
-    ownerId   String         @db.ObjectId
-    owner     User           @relation(fields: [ownerId], references: [id], name: "ServerOwner")
-    members   ServerMember[]
-    channels  Channel[]
-    createdAt DateTime       @default(now())
-    updatedAt DateTime       @updatedAt
+    id          String             @id @default(auto()) @map("_id") @db.ObjectId
+    name        String
+    iconUrl     String?
+    badges      String[]
+    ownerId     String             @db.ObjectId
+    owner       User               @relation(fields: [ownerId], references: [id], name: "ServerOwner")
+    members     ServerMember[]
+    channels    Channel[]
+    createdAt   DateTime           @default(now())
+    updatedAt   DateTime           @updatedAt
+    permissions ServerPermission[]
 
     @@map("server")
 }
@@ -125,6 +128,19 @@ model Message {
     @@index([senderId])
     @@index([channelId])
     @@map("message")
+}
+
+model ServerPermission {
+    id     String @id @default(auto()) @map("_id") @db.ObjectId
+    name   String
+    url    String
+    userId String @unique @db.ObjectId
+    user   User   @relation(fields: [userId], references: [id])
+
+    serverId String @unique @db.ObjectId
+    server   Server @relation(fields: [serverId], references: [id])
+
+    @@map("server_permission")
 }
 
 enum UserRole {

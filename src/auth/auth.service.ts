@@ -10,6 +10,7 @@ import envConfiguration, { env } from 'configs/env.configuration';
 import { Request, Response } from 'express';
 import { PrismaService } from 'lib/data-access/prisma/prisma.service';
 import { createHashPassword } from 'lib/helper';
+import { AuthMessage } from 'lib/shared/responses/auth/auth-response.message';
 
 @Injectable()
 export class AuthService {
@@ -120,6 +121,7 @@ export class AuthService {
   async logout(req: Request, res: Response) {
     const token = await this.prisma.token.delete({ where: { refreshToken: req.cookies['refresh_token'] } })
     res.clearCookie('refresh_token')
+    return { message: AuthMessage.LOGOUT_SUCCESS }
   }
 
   async refresh(req: Request) {
