@@ -100,7 +100,21 @@ export class AuthService {
   async register(user: RegisterUserDto) {
     const hashedPassword = await createHashPassword(user.password);
     user.password = hashedPassword;
-    return this.userService.create(user);
+    const data = await this.userService.create(user);
+    const newIdentity = await this.identityService.create({ username: user.username, email: user.email, password: hashedPassword })
+    const payload: JwtPayload = {
+      role: data.role,
+      sub: data.id,
+      username: user.username,
+      userId: data.id
+    }
+    const access_token = await this.jwtService.signAsync(payload)
+    const refresh_token = await this.processRefreshToken(payload)
+    return {
+      access_token,
+      refresh_token
+    }
+
   }
 
   async logout(req: Request, res: Response) {
@@ -114,7 +128,6 @@ export class AuthService {
       const refresh = req.cookies['refresh_token']
       const payload = await this.verifyToken(refresh, true)
       return {
-        userId: payload.userId,
         access_token: this.jwtService.sign(payload),
         refresh_token: refresh
       };
