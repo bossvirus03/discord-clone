@@ -6,7 +6,8 @@ import { ChannelType } from '@discord-clone/DiscordClone';
 
 @Injectable()
 export class ServerService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService,
+  ) { }
   async create(createServerDto: CreateServerDto, ownerId: string) {
     return await this.prisma.server.create({
       data: {

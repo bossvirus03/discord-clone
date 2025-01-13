@@ -12,10 +12,12 @@ import { CreateServerDto } from 'lib/shared/dto/server/create-server.dto';
 import { UpdateServerDto } from 'lib/shared/dto/server/update-server.dto';
 import { User } from 'lib/shared/decorators/customize.decorator';
 import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
+import { ServerPermissionService } from './server-permission.service';
 
 @Controller('server')
 export class ServerController {
-  constructor(private readonly serverService: ServerService) {}
+  constructor(private readonly serverService: ServerService,
+    private readonly serverPermissionService: ServerPermissionService) { }
 
   @Post()
   create(@Body() createServerDto: CreateServerDto, @User() user: JwtPayload) {

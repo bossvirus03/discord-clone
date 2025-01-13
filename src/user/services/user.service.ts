@@ -8,6 +8,7 @@ import { Roles } from 'lib/shared/decorators/roles.decorator';
 import { UserRole } from '@discord-clone/DiscordClone';
 import { UpdateStatusUserDto } from 'lib/shared/dto/user/update-status-user.dto';
 import { createHashPassword } from 'lib/helper';
+import { UserMessage } from 'lib/shared/responses/user/user-response.message';
 
 @Injectable()
 export class UserService {
@@ -56,7 +57,7 @@ export class UserService {
 
   @Roles(UserRole.ADMIN)
   findAll() {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({ include: { friends: true } });
   }
 
   @Roles(UserRole.ADMIN)
@@ -111,7 +112,9 @@ export class UserService {
       const user = await this.prisma.user.delete({
         where: { id },
       });
-      //todo
+      return {
+        message: UserMessage.DELETE_SUCCESS
+      }
     } catch (error) {
       if (error.errorCode === 'P2025') {
         throw new BadRequestException('User not found');
