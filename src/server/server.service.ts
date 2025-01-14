@@ -13,14 +13,19 @@ export class ServerService {
   constructor(private prisma: PrismaService,
   ) { }
   async create(dto: CreateServerDto, ownerId: string) {
-    return await this.prisma.server.create({
-      data: {
-        ownerId,
-        name: dto.name,
-        iconUrl: dto.iconUrl,
-        badges: dto.badges
-      },
-    });
+    try {
+      return await this.prisma.server.create({
+        data: {
+          ownerId,
+          name: dto.name,
+          iconUrl: dto.iconUrl,
+          badges: dto.badges
+        },
+      });
+    } catch (error) {
+      throw new CustomError(ErrorMessage.COMMON_BAD_REQUEST, HttpStatus.BAD_REQUEST);
+    }
+
   }
   @Roles(UserRole.ADMIN)
   findAll() {
@@ -34,9 +39,8 @@ export class ServerService {
       });
       return server;
     } catch (error) {
-      //todo
       if (error.errorCode === 'P2025') {
-        throw new BadRequestException('Server not found');
+        throw new CustomError(ErrorMessage.SERVER_NOT_FOUND, HttpStatus.NOT_FOUND);
       }
     }
   }

@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateServerPermissionDto {
+export class UpdateServerPermissionDto {
     @IsString()
     @IsNotEmpty()
     name: string;

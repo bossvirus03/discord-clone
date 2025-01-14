@@ -11,3 +11,19 @@ export interface ServerRes {
 export interface ServerDeleteRes {
     message: string;
 }
+
+export interface ServerPermissionRes {
+    id: string;
+    name: string;
+    description: string;
+    apiPath: string;
+    method: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    userId: string;
+    serverId: string;
+}
+
+export interface ServerPermissionDeleteRes {
+    message: string;
+}

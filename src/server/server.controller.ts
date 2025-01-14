@@ -13,7 +13,9 @@ import { UpdateServerDto } from 'lib/shared/dto/server/update-server.dto';
 import { User } from 'lib/shared/decorators/customize.decorator';
 import { JwtPayload } from 'lib/shared/type/jwt-payload.type';
 import { ServerPermissionService } from './server-permission.service';
-import { ServerDeleteRes, ServerRes } from 'lib/shared/responses/server/server-response.type';
+import { ServerDeleteRes, ServerPermissionRes, ServerRes } from 'lib/shared/responses/server/server-response.type';
+import { CreateServerPermissionDto } from 'lib/shared/dto/server/server-permission/create-server-permission.dto';
+import { UpdateServerPermissionDto } from 'lib/shared/dto/server/server-permission/update-server-permission.dto';
 
 @Controller('server')
 export class ServerController {
@@ -44,5 +46,31 @@ export class ServerController {
   @Delete(':id')
   remove(@Param('id') id: string): Promise<ServerDeleteRes> {
     return this.serverService.remove(id);
+  }
+
+  @Post("permission")
+  createPermission(@Body() dto: CreateServerPermissionDto, @User() user: JwtPayload): Promise<ServerPermissionRes> {
+    const { userId: ownerId } = user;
+    return this.serverPermissionService.create(dto, ownerId);
+  }
+
+  @Get("permission/:serverId")
+  findAllPermissionByServer(@Param('serverId') serverId: string): Promise<ServerPermissionRes[]> {
+    return this.serverPermissionService.findAllByServer(serverId);
+  }
+
+  @Get('permission/detail/:idPermission')
+  findOnePermission(@Param('idPermission') idPermission: string): Promise<ServerPermissionRes> {
+    return this.serverPermissionService.findOne(idPermission);
+  }
+
+  @Put('permission/:idPermission')
+  updatePermission(@Param('idPermission') idPermission: string, @Body() dto: UpdateServerPermissionDto): Promise<ServerPermissionRes> {
+    return this.serverPermissionService.update(idPermission, dto);
+  }
+
+  @Delete('permission/:idPermission')
+  removePermission(@Param('idPermission') idPermission: string): Promise<ServerDeleteRes> {
+    return this.serverPermissionService.remove(idPermission);
   }
 }
