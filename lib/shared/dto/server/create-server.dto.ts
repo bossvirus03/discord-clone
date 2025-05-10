@@ -4,4 +4,6 @@ export class CreateServerDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+  iconUrl: string;
+  badges: string[];
 }
